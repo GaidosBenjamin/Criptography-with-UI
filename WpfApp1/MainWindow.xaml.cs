@@ -59,9 +59,35 @@ namespace WpfApp1
         private void RandomKeyButton_Click(object sender, RoutedEventArgs e)
         {
             Random rnd = new Random();
-            byte[] key = new byte[32];
-            rnd.NextBytes(key);
-            this.KeyTextBox.Text = getString(key);
+            
+            switch (this.AlgorithmComboBox.Text)
+            {
+                case "Aes":
+                    byte[] key = new byte[32];
+                    rnd.NextBytes(key);
+                    this.KeyTextBox.Text = getString(key);
+                    break;
+                case "DES":
+                    byte[] keyDes = new byte[8];
+                    rnd.NextBytes(keyDes);
+                    this.KeyTextBox.Text = getString(keyDes);
+                    break;
+                case "TripleDES":
+                    byte[] keyTripleDes = new byte[16];
+                    rnd.NextBytes(keyTripleDes);
+                    this.KeyTextBox.Text = getString(keyTripleDes);
+                    break;
+                case "RC2":
+                    byte[] keyRC2 = new byte[16];
+                    rnd.NextBytes(keyRC2);
+                    this.KeyTextBox.Text = getString(keyRC2);
+                    break;
+                case "Rijndael":
+                    byte[] keyRijandel = new byte[32];
+                    rnd.NextBytes(keyRijandel);
+                    this.KeyTextBox.Text = getString(keyRijandel);
+                    break;
+            }
         }
 
         private void InputChooseButton_Click(object sender, RoutedEventArgs e)
@@ -185,6 +211,7 @@ namespace WpfApp1
                 }
 
                 File.WriteAllBytes(this.OutputTextBox.Text, encrypted);
+                MessageBox.Show("Succesfuly encrypted!");
             }
         }
 
@@ -214,47 +241,249 @@ namespace WpfApp1
                 }
 
                 File.WriteAllText(this.OutputTextBox.Text, output);
+                MessageBox.Show("Succesfuly decrypted!");
             }
         }
 
         private void desEncryption(String cipher, String padding, String key)
         {
+            using (DES des = DES.Create())
+            {
+                des.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                des.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                des.KeySize = 64;
+                des.Key = getBytes(this.KeyTextBox.Text);
 
+                string input = File.ReadAllText(this.InputTextBox.Text);
+
+                ICryptoTransform encryptor = des.CreateEncryptor(des.Key, des.IV);
+                byte[] encrypted;
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+                            swEncrypt.Write(input);
+                        }
+                        encrypted = msEncrypt.ToArray();
+                    }
+                }
+
+                File.WriteAllBytes(this.OutputTextBox.Text, encrypted);
+                MessageBox.Show("Succesfuly encrypted!");
+            }
         }
+    
 
-        private void tripleDesEncryption(String cipher, String padding, String key)
+        private void desDecryption(String cipher, String padding, String key)
         {
+            using (DES des = DES.Create())
+            {
+                des.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                des.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                des.KeySize = 64;
+                des.Key = getBytes(this.KeyTextBox.Text);
 
+                byte[] input = File.ReadAllBytes(this.InputTextBox.Text);
+                string output = null;
+
+                ICryptoTransform decryptor = des.CreateDecryptor(des.Key, des.IV);
+
+                using (MemoryStream msDecrypt = new MemoryStream(input))
+                {
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+                            output = srDecrypt.ReadToEnd();
+                        }
+                    }
+                }
+
+                File.WriteAllText(this.OutputTextBox.Text, output);
+                MessageBox.Show("Succesfuly decrypted!");
+            }
         }
 
         private void rc2Encryption(String cipher, String padding, String key)
         {
+            using (RC2 rc2 = RC2.Create())
+            {
+                rc2.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                rc2.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                rc2.KeySize = 128;
+                rc2.Key = getBytes(this.KeyTextBox.Text);
 
-        }
+                string input = File.ReadAllText(this.InputTextBox.Text);
 
-        private void rijndaelEncryption(String cipher, String padding, String key)
-        {
+                ICryptoTransform encryptor = rc2.CreateEncryptor(rc2.Key, rc2.IV);
+                byte[] encrypted;
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+                            swEncrypt.Write(input);
+                        }
+                        encrypted = msEncrypt.ToArray();
+                    }
+                }
 
-        }
-
-        private void desDecryption(String cipher, String padding, String key)
-        {
-
-        }
-
-        private void tripleDesDecryption(String cipher, String padding, String key)
-        {
-
+                File.WriteAllBytes(this.OutputTextBox.Text, encrypted);
+                MessageBox.Show("Succesfuly encrypted!");
+            }
         }
 
         private void rc2Decryption(String cipher, String padding, String key)
         {
+            using (RC2 rc2 = RC2.Create())
+            {
+                rc2.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                rc2.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                rc2.KeySize = 128;
+                rc2.Key = getBytes(this.KeyTextBox.Text);
 
+                byte[] input = File.ReadAllBytes(this.InputTextBox.Text);
+                string output = null;
+
+                ICryptoTransform decryptor = rc2.CreateDecryptor(rc2.Key, rc2.IV);
+
+                using (MemoryStream msDecrypt = new MemoryStream(input))
+                {
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+                            output = srDecrypt.ReadToEnd();
+                        }
+                    }
+                }
+
+                File.WriteAllText(this.OutputTextBox.Text, output);
+                MessageBox.Show("Succesfuly decrypted!");
+            }
+        }
+
+        private void tripleDesEncryption(String cipher, String padding, String key)
+        {
+            using (TripleDES tDes = TripleDES.Create())
+            {
+                tDes.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                tDes.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                tDes.KeySize = 128;
+                tDes.Key = getBytes(this.KeyTextBox.Text);
+
+                string input = File.ReadAllText(this.InputTextBox.Text);
+
+                ICryptoTransform encryptor = tDes.CreateEncryptor(tDes.Key, tDes.IV);
+                byte[] encrypted;
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+                            swEncrypt.Write(input);
+                        }
+                        encrypted = msEncrypt.ToArray();
+                    }
+                }
+
+                File.WriteAllBytes(this.OutputTextBox.Text, encrypted);
+                MessageBox.Show("Succesfuly encrypted!");
+            }
+        }
+
+        private void tripleDesDecryption(String cipher, String padding, String key)
+        {
+            using (TripleDES tDes = TripleDES.Create())
+            {
+                tDes.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                tDes.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                tDes.KeySize = 128;
+                tDes.Key = getBytes(this.KeyTextBox.Text);
+
+                byte[] input = File.ReadAllBytes(this.InputTextBox.Text);
+                string output = null;
+
+                ICryptoTransform decryptor = tDes.CreateDecryptor(tDes.Key, tDes.IV);
+
+                using (MemoryStream msDecrypt = new MemoryStream(input))
+                {
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+                            output = srDecrypt.ReadToEnd();
+                        }
+                    }
+                }
+
+                File.WriteAllText(this.OutputTextBox.Text, output);
+                MessageBox.Show("Succesfuly decrypted!");
+            }
+        }
+
+        private void rijndaelEncryption(String cipher, String padding, String key)
+        {
+            using (Rijndael rijandael = Rijndael.Create())
+            {
+                rijandael.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                rijandael.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                rijandael.KeySize = 256;
+                rijandael.Key = getBytes(this.KeyTextBox.Text);
+
+                string input = File.ReadAllText(this.InputTextBox.Text);
+
+                ICryptoTransform encryptor = rijandael.CreateEncryptor(rijandael.Key, rijandael.IV);
+                byte[] encrypted;
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+                            swEncrypt.Write(input);
+                        }
+                        encrypted = msEncrypt.ToArray();
+                    }
+                }
+
+                File.WriteAllBytes(this.OutputTextBox.Text, encrypted);
+                MessageBox.Show("Succesfuly encrypted!");
+            }
         }
 
         private void rijndaelDecryption(String cipher, String padding, String key)
         {
+            using (Rijndael rijndael = Rijndael.Create())
+            {
+                rijndael.Mode = (CipherMode)Enum.Parse(typeof(CipherMode), cipher, true);
+                rijndael.Padding = (PaddingMode)Enum.Parse(typeof(PaddingMode), padding, true);
+                rijndael.KeySize = 256;
+                rijndael.Key = getBytes(this.KeyTextBox.Text);
 
+                byte[] input = File.ReadAllBytes(this.InputTextBox.Text);
+                string output = null;
+
+                ICryptoTransform decryptor = rijndael.CreateDecryptor(rijndael.Key, rijndael.IV);
+
+                using (MemoryStream msDecrypt = new MemoryStream(input))
+                {
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+                            output = srDecrypt.ReadToEnd();
+                        }
+                    }
+                }
+
+                File.WriteAllText(this.OutputTextBox.Text, output);
+                MessageBox.Show("Succesfuly decrypted!");
+            }
         }
 
     }
